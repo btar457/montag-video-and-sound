@@ -68,6 +68,23 @@ class EditProject {
     return copyWith(clips: updated);
   }
 
+  /// Splits clip [clipId] at [sourcePosition], a time in its *source* file
+  /// (what the preview player reports), not on the timeline.
+  EditProject splitClip(
+    String clipId,
+    Duration sourcePosition, {
+    required String newClipId,
+  }) {
+    final index = _indexOf(clipId);
+    final clip = clips[index];
+    final (first, second) = clip.splitAt(
+      sourcePosition - clip.trimStart,
+      newId: newClipId,
+    );
+    final updated = [...clips]..replaceRange(index, index + 1, [first, second]);
+    return copyWith(clips: updated);
+  }
+
   /// Splits whichever clip is under the timeline [position].
   EditProject splitAt(Duration position, {required String newClipId}) {
     final location = locate(position);

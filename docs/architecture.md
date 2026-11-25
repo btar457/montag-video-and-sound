@@ -17,7 +17,8 @@ lib/
   core/ids.dart          ← توليد معرّفات آمنة كأسماء ملفات + isSafeId
   core/media/            ← MediaLibrary: مجلد دائم للوسائط المستوردة
   core/format.dart       ← تنسيق المدد m:ss
-  features/editor/       ← EditorController (Riverpod) + EditorScreen
+  features/editor/       ← EditorController (Riverpod) + EditorScreen + ClipPanel
+                           (معاينة/قص/تقسيم) + clipPreviewProvider (يُستبدل في الاختبارات)
   features/import/       ← ImportService + واجهات MediaPicker/MediaProbe
   features/home/         ← HomeScreen: قائمة المشاريع
   (مخطط) features/export ← شاشة التصدير
@@ -45,6 +46,11 @@ android/app/src/main/kotlin/  ← (مخطط) تنفيذ المعالجة عبر 
 - المعرّف يُتحقق منه بـ`isSafeId` قبل أي عملية على الملفات، لمنع الخروج من المجلد (`../`).
 - الملف التالف يظهر في `unreadable` عند العرض، ولا يُحذف أبداً تلقائياً.
 - `projectRepositoryProvider` يُمرَّر في `main.dart`، ويُستبدل في الاختبارات بمجلد مؤقت.
+
+## المعاينة والقص
+- المعاينة تعمل على مقطع واحد: تبدأ من `trimStart` وتتوقف عند `trimEnd`.
+- الموضع الذي تبلّغه المعاينة هو زمن في **ملف المصدر**؛ `splitClip` يأخذه بهذا المعنى.
+- `clampTrim` يحوّل قيم شريط القص إلى نطاق صالح (داخل الملف، ≥100ms).
 
 ## الاستيراد
 1. `MediaPicker` (منتقي النظام عبر `image_picker.pickMultiVideo`) يعيد مسارات في

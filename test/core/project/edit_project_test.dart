@@ -103,6 +103,58 @@ void main() {
     });
   });
 
+  test('splitClip cuts at a source-file time', () {
+    final trimmed = project.trimClip('b', start: const Duration(seconds: 1));
+    // b now uses source 1s..6s; cut at source 4s → 3s + 2s.
+    final edited = trimmed.splitClip(
+      'b',
+      const Duration(seconds: 4),
+      newClipId: 'b2',
+    );
+    expect(edited.clips.map((c) => c.id), ['a', 'b', 'b2', 'c']);
+    expect(edited.clips[1].trimStart, const Duration(seconds: 1));
+    expect(edited.clips[1].trimEnd, const Duration(seconds: 4));
+    expect(edited.clips[2].trimStart, const Duration(seconds: 4));
+    expect(edited.clips[2].trimEnd, const Duration(seconds: 6));
+    expect(edited.totalDuration, trimmed.totalDuration);
+  });
+
+  test('splitClip boundaries: exactly 100ms is allowed, 99ms is not', () {
+    final trimmed = project.trimClip('b', start: const Duration(seconds: 1));
+    const ms = Duration(milliseconds: 1);
+    final start = trimmed.clips[1].trimStart;
+    final end = trimmed.clips[1].trimEnd;
+    expect(
+      trimmed.splitClip('b', start + ms * 100, newClipId: 'x').clips,
+      hasLength(4),
+    );
+    expect(
+      trimmed.splitClip('b', end - ms * 100, newClipId: 'x').clips,
+      hasLength(4),
+    );
+    expect(
+      () => trimmed.splitClip('b', start + ms * 99, newClipId: 'x'),
+      throwsArgumentError,
+    );
+    expect(
+      () => trimmed.splitClip('b', end - ms * 99, newClipId: 'x'),
+      throwsArgumentError,
+    );
+  });
+
+  test('splitClip outside the used range or unknown clip throws', () {
+    final trimmed = project.trimClip('b', start: const Duration(seconds: 1));
+    expect(
+      () => trimmed.splitClip('b', Duration.zero, newClipId: 'x'),
+      throwsArgumentError,
+    );
+    expect(
+      () =>
+          trimmed.splitClip('zzz', const Duration(seconds: 2), newClipId: 'x'),
+      throwsArgumentError,
+    );
+  });
+
   test('splitAt splits the clip under the playhead', () {
     final edited = project.splitAt(const Duration(seconds: 7), newClipId: 'b2');
     expect(edited.clips.map((c) => c.id), ['a', 'b', 'b2', 'c']);

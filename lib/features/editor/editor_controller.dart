@@ -117,6 +117,11 @@ class EditorController extends Notifier<EditorState?> {
   void trimClip(String clipId, {Duration? start, Duration? end}) =>
       _apply((p) => p.trimClip(clipId, start: start, end: end));
 
+  /// Splits [clipId] at a time in its source file (see [EditProject.splitClip]).
+  void splitClip(String clipId, Duration sourcePosition) => _apply(
+    (p) => p.splitClip(clipId, sourcePosition, newClipId: _ids.next()),
+  );
+
   void splitAt(Duration position) =>
       _apply((p) => p.splitAt(position, newClipId: _ids.next()));
 
