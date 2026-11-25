@@ -21,9 +21,12 @@ lib/
                            (معاينة/قص/تقسيم) + clipPreviewProvider (يُستبدل في الاختبارات)
   features/import/       ← ImportService + واجهات MediaPicker/MediaProbe
   features/home/         ← HomeScreen: قائمة المشاريع
-  (مخطط) features/export ← شاشة التصدير
-  (مخطط) engine/         ← جسر Dart ↔ Kotlin إلى محرك Media3
-android/app/src/main/kotlin/  ← (مخطط) تنفيذ المعالجة عبر Media3 Transformer
+  core/export/           ← ExportRequest: طلب التصدير (مقاس + مقاطع بالميكروثانية)
+  features/export/       ← ExportEngine (قناة المنصة) + ExportScreen
+android/app/src/main/kotlin/app/laqta/laqta/
+  ExportRequestParser.kt ← يتحقق من كل حقل قادم من Dart (مختبَر على JVM)
+  ExportHandler.kt       ← Media3 Transformer: Composition + Presentation + تقدّم/إلغاء
+  MainActivity.kt        ← يسجّل القناتين app.laqta/export و app.laqta/export/events
 ```
 
 ## المبادئ
@@ -90,6 +93,24 @@ android/app/src/main/kotlin/  ← (مخطط) تنفيذ المعالجة عبر 
 
 قواعد: معرّفات المقاطع فريدة، وأقصر مقطع 100ms، و`0 ≤ trimStart < trimEnd ≤ sourceDuration`.
 الموضع على حدّ بين مقطعين يتبع المقطع التالي.
+
+## التصدير
+- Dart يبني `ExportRequest` ويرسله عبر `MethodChannel('app.laqta/export')`؛ التقدّم
+  يعود عبر `EventChannel('app.laqta/export/events')`. البروتوكول موثّق في
+  `export_engine.dart`.
+- Kotlin **لا يثق** بالطلب: كل مقطع يجب أن يكون ملفاً داخل `app_flutter/media`،
+  والناتج داخل `cache/exports` بامتداد mp4، بعد حلّ `..` والروابط الرمزية.
+- كل المقاطع تُحجَّم لتناسب الإطار المختار (`LAYOUT_SCALE_TO_FIT`، أشرطة سوداء عند
+  اختلاف النسبة). H.264 + AAC. المقاطع بلا صوت تُملأ بصمت (`experimentalSetForceAudioTrack`)،
+  وفيديو HDR يُحوَّل إلى SDR. القص بدقة الميكروثانية.
+- ملفات التصدير مؤقتة: تُحذف كلها من `cache/exports` عند الإقلاع.
+- مسار مجلد الوسائط في Kotlin (`getDir("flutter")/media`) يطابق `path_provider`
+  (`getApplicationDocumentsDirectory`) + `mediaFolder` في `main.dart`؛ تغيير أحدهما
+  يكسر التصدير، فغيّرهما معاً.
+- الخروج من شاشة التصدير يلغي العملية ويحذف الملف الناقص.
+- صلاحيات الـ manifest المدمج (مُتحقَّق منها بالبناء): `ACCESS_NETWORK_STATE`
+  و`WAKE_LOCK` من `media3-exoplayer` (عاديتان، لا تُطلبان من المستخدم)،
+  و`INTERNET` في نسخة debug فقط (أدوات Flutter).
 
 ## محرك المعالجة
 - **Media3 Transformer** (Google، يستخدم معالج الفيديو في الجهاز): قص، دمج،

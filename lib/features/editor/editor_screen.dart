@@ -3,6 +3,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../../core/format.dart';
 import '../import/import_service.dart';
+import '../export/export_screen.dart';
 import 'clip_panel.dart';
 import 'editor_controller.dart';
 
@@ -36,6 +37,22 @@ class _EditorScreenState extends ConsumerState<EditorScreen> {
       appBar: AppBar(
         title: Text(state.project.name),
         actions: [
+          IconButton(
+            tooltip: 'تصدير',
+            icon: const Icon(Icons.ios_share),
+            onPressed: clips.isEmpty
+                ? null
+                : () {
+                    // Close the preview first: its player would compete with
+                    // the exporter for the phone's hardware video codecs.
+                    setState(() => _selectedId = null);
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => const ExportScreen(),
+                      ),
+                    );
+                  },
+          ),
           IconButton(
             tooltip: 'تراجع',
             icon: const Icon(Icons.undo),

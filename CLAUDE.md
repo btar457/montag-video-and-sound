@@ -9,7 +9,10 @@
 flutter analyze
 flutter test
 dart format lib test
+flutter build apk --debug                         # يتطلب Android SDK
+(cd android && ./gradlew :app:testDebugUnitTest)  # اختبارات Kotlin
 ```
+عند تعديل أي ملف Kotlin يجب أن ينجح البناء واختبارات Kotlin أيضاً.
 
 ## قواعد العمل
 

@@ -7,7 +7,9 @@ import 'package:path_provider/path_provider.dart';
 import 'core/media/media_cleanup.dart';
 import 'core/media/media_library.dart';
 import 'core/storage/project_repository.dart';
+import 'core/storage/temp_files.dart';
 import 'features/editor/editor_controller.dart';
+import 'features/export/export_screen.dart';
 import 'features/home/home_screen.dart';
 import 'features/import/import_service.dart';
 
@@ -28,8 +30,14 @@ Future<void> main() async {
     movableFrom: cache,
   );
 
+  // Must match ExportHandler.kt, which only writes inside cache/exports.
+  final exports = Directory('${cache.path}${Platform.pathSeparator}exports');
+
   try {
     await cleanUnusedMedia(projects, media);
+    // Renders are temporary: leftovers from earlier runs (finished or cut
+    // short when the app was killed) are not needed any more.
+    await clearFiles(exports);
   } catch (_) {
     // Cleanup is best-effort; never block the app from starting.
   }
@@ -39,6 +47,7 @@ Future<void> main() async {
       overrides: [
         projectRepositoryProvider.overrideWithValue(projects),
         mediaLibraryProvider.overrideWithValue(media),
+        exportDirectoryProvider.overrideWithValue(exports),
       ],
       child: const LaqtaApp(),
     ),

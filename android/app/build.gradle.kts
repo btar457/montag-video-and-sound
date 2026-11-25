@@ -47,3 +47,13 @@ kotlin {
 flutter {
     source = "../.."
 }
+
+// Same Media3 version as video_player_android, so only one copy ships.
+val media3Version = "1.9.2"
+
+dependencies {
+    implementation("androidx.media3:media3-transformer:$media3Version")
+    implementation("androidx.media3:media3-effect:$media3Version")
+    implementation("androidx.media3:media3-common:$media3Version")
+    testImplementation("junit:junit:4.13.2")
+}
