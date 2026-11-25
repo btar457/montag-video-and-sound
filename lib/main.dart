@@ -4,21 +4,41 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:material_ui/material_ui.dart';
 import 'package:path_provider/path_provider.dart';
 
+import 'core/media/media_cleanup.dart';
+import 'core/media/media_library.dart';
 import 'core/storage/project_repository.dart';
 import 'features/editor/editor_controller.dart';
+import 'features/home/home_screen.dart';
+import 'features/import/import_service.dart';
+
+/// Folders inside the app's private documents directory.
+const projectsFolder = 'projects';
+const mediaFolder = 'media';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final documents = await getApplicationDocumentsDirectory();
-  final projectsDir = Directory(
-    '${documents.path}${Platform.pathSeparator}projects',
+  final cache = await getTemporaryDirectory(); // where the picker puts copies
+  String inDocuments(String name) =>
+      '${documents.path}${Platform.pathSeparator}$name';
+
+  final projects = ProjectRepository(Directory(inDocuments(projectsFolder)));
+  final media = MediaLibrary(
+    Directory(inDocuments(mediaFolder)),
+    movableFrom: cache,
   );
+
+  try {
+    await cleanUnusedMedia(projects, media);
+  } catch (_) {
+    // Cleanup is best-effort; never block the app from starting.
+  }
+
   runApp(
     ProviderScope(
       overrides: [
-        projectRepositoryProvider.overrideWithValue(
-          ProjectRepository(projectsDir),
-        ),
+        projectRepositoryProvider.overrideWithValue(projects),
+        mediaLibraryProvider.overrideWithValue(media),
       ],
       child: const LaqtaApp(),
     ),
@@ -43,38 +63,6 @@ class LaqtaApp extends StatelessWidget {
         ),
       ),
       home: const HomeScreen(),
-    );
-  }
-}
-
-/// Start screen. Lists saved projects once project storage lands (v0.1).
-class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Scaffold(
-      appBar: AppBar(title: const Text('لقطة')),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              Icons.movie_creation_outlined,
-              size: 72,
-              color: theme.colorScheme.primary,
-            ),
-            const SizedBox(height: 16),
-            Text('لا توجد مشاريع بعد', style: theme.textTheme.titleLarge),
-            const SizedBox(height: 8),
-            Text(
-              'ابدأ مشروعك الأول بقصّ ودمج مقاطعك',
-              style: theme.textTheme.bodyMedium,
-            ),
-          ],
-        ),
-      ),
     );
   }
 }

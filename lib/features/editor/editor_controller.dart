@@ -82,6 +82,34 @@ class EditorController extends Notifier<EditorState?> {
     ),
   );
 
+  /// Adds several clips at the end as a single undo step.
+  ///
+  /// If [intoProjectId] is given and a different project is open now (the
+  /// user switched projects during a slow import), throws [StateError] and
+  /// changes nothing.
+  void addClips(
+    List<({String path, Duration duration})> media, {
+    String? intoProjectId,
+  }) {
+    if (intoProjectId != null && _require().project.id != intoProjectId) {
+      throw StateError('A different project was opened during the import');
+    }
+    if (media.isEmpty) return;
+    _apply((p) {
+      var next = p;
+      for (final m in media) {
+        next = next.addClip(
+          Clip.full(
+            id: _ids.next(),
+            sourcePath: m.path,
+            sourceDuration: m.duration,
+          ),
+        );
+      }
+      return next;
+    });
+  }
+
   void removeClip(String clipId) => _apply((p) => p.removeClip(clipId));
 
   void moveClip(int from, int to) => _apply((p) => p.moveClip(from, to));
@@ -120,6 +148,9 @@ class EditorController extends Notifier<EditorState?> {
     state = current.withHistory(history);
     _save(history.present, repository);
   }
+
+  /// Returns the open project's id; throws [StateError] if none is open.
+  String requireOpen() => _require().project.id;
 
   EditorState _require() {
     final current = state;

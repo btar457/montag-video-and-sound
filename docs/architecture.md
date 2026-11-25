@@ -15,8 +15,12 @@ lib/
   core/history/          ← EditHistory: تراجع/إعادة عام فوق لقطات غير قابلة للتعديل
   core/storage/          ← ProjectRepository: ملف <id>.json لكل مشروع
   core/ids.dart          ← توليد معرّفات آمنة كأسماء ملفات + isSafeId
-  features/editor/       ← EditorController (Riverpod): التعديلات + التاريخ + الحفظ التلقائي
-  (مخطط) features/…      ← الشاشات: الرئيسية، المحرر، التصدير
+  core/media/            ← MediaLibrary: مجلد دائم للوسائط المستوردة
+  core/format.dart       ← تنسيق المدد m:ss
+  features/editor/       ← EditorController (Riverpod) + EditorScreen
+  features/import/       ← ImportService + واجهات MediaPicker/MediaProbe
+  features/home/         ← HomeScreen: قائمة المشاريع
+  (مخطط) features/export ← شاشة التصدير
   (مخطط) engine/         ← جسر Dart ↔ Kotlin إلى محرك Media3
 android/app/src/main/kotlin/  ← (مخطط) تنفيذ المعالجة عبر Media3 Transformer
 ```
@@ -41,6 +45,22 @@ android/app/src/main/kotlin/  ← (مخطط) تنفيذ المعالجة عبر 
 - المعرّف يُتحقق منه بـ`isSafeId` قبل أي عملية على الملفات، لمنع الخروج من المجلد (`../`).
 - الملف التالف يظهر في `unreadable` عند العرض، ولا يُحذف أبداً تلقائياً.
 - `projectRepositoryProvider` يُمرَّر في `main.dart`، ويُستبدل في الاختبارات بمجلد مؤقت.
+
+## الاستيراد
+1. `MediaPicker` (منتقي النظام عبر `image_picker.pickMultiVideo`) يعيد مسارات في
+   **كاش** التطبيق، والنظام قد يمسح الكاش في أي وقت.
+2. `MediaProbe` يقرأ المدة. الملف غير المقروء أو الأقصر من 100ms يُرفض ويُبلَّغ باسمه.
+3. `MediaLibrary.adopt` ينقل الملف (rename، بلا نسخ) إلى `<documents>/media/` باسم
+   مولَّد. لا يُحفظ اسم الملف الأصلي.
+4. كل المقاطع تُضاف كخطوة تراجع واحدة.
+- `MediaLibrary.remove` يرفض أي مسار خارج مجلده، فلا نحذف ملفات المستخدم أبداً.
+- النقل (rename) مسموح فقط من مجلد الكاش (`movableFrom`). أي ملف خارجه يُنسخ ولا يُنقل،
+  فلا نأخذ ملفاً أصلياً من مكانه أبداً.
+- `importInto` يتذكر المشروع الذي بدأ عنده؛ إن فُتح مشروع آخر أثناء الاستيراد تُرفض
+  الإضافة وتُحذف الملفات المنقولة.
+- `cleanUnusedMedia` عند الإقلاع يحذف من `media/` كل ملف لا يستخدمه أي مشروع محفوظ
+  (بعد تراجع عن استيراد أو حذف مقطع). لا يحذف شيئاً إن وُجد مشروع تالف.
+- قراءة المدة لها مهلة 10 ثوانٍ؛ الملف الذي يعلّق المشغّل يُعدّ غير مقروء.
 
 ## شكل ملف المشروع (schemaVersion 1)
 
@@ -72,8 +92,14 @@ android/app/src/main/kotlin/  ← (مخطط) تنفيذ المعالجة عبر 
   مجتمعية احتياطي فقط لما لا يدعمه Media3، وانتبه لرخصة GPL/LGPL.
 
 ## الصلاحيات والخصوصية
-- لا صلاحيات تخزين واسعة: نستخدم منتقي الوسائط (Photo Picker) أو
-  `READ_MEDIA_VIDEO` و`READ_MEDIA_AUDIO`. ولا `MANAGE_EXTERNAL_STORAGE` أبداً.
+- **التطبيق لا يطلب أي صلاحية وقت التشغيل.** الاستيراد يتم بمنتقي النظام (Photo Picker)
+  الذي لا يحتاج صلاحية. ولا `MANAGE_EXTERNAL_STORAGE` أبداً.
+- لم يُفحص الـ manifest المدمج بعد (لا Android SDK في بيئة التطوير). يُرجَّح أن
+  `media3` (عبر `video_player`) يضيف `ACCESS_NETWORK_STATE`، وهي صلاحية عادية لا تُطلب
+  من المستخدم. يُتحقق بـ`flutter build apk` ثم مراجعة
+  `build/app/intermediates/merged_manifests/`.
+- مقترح معلّق بانتظار مصطفى: `android:allowBackup="false"` حتى لا تُرفع ملفات
+  المشاريع (وفيها مسارات الوسائط) إلى Google Drive تلقائياً.
 - `RECORD_AUDIO` فقط عند إضافة التعليق الصوتي، ويُطلب وقت الاستخدام.
 - أي تعديل على `AndroidManifest.xml` محمي بخطاف ويحتاج موافقة مصطفى.
 - الملفات المؤقتة (التصدير، الصوت المستخرج، صور النصوص) تُحذف بعد الاستخدام.

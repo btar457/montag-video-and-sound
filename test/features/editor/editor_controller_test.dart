@@ -183,6 +183,23 @@ void main() {
     expect(spy.saved.length, savesBefore);
   });
 
+  test('addClips: empty list is a no-op; wrong project is refused', () {
+    final p = controller().createNew('x');
+    final before = state();
+    controller().addClips([]);
+    expect(identical(state(), before), isTrue);
+
+    final media = [(path: '/m/a.mp4', duration: const Duration(seconds: 2))];
+    expect(
+      () => controller().addClips(media, intoProjectId: 'other'),
+      throwsStateError,
+    );
+    expect(state().project.clips, isEmpty);
+
+    controller().addClips(media, intoProjectId: p.id);
+    expect(state().project.clips, hasLength(1));
+  });
+
   test('close clears the open project', () {
     controller().createNew('x');
     controller().close();
