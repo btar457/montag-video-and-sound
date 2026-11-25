@@ -28,6 +28,15 @@ void main() {
     expect(empty.totalDuration, Duration.zero);
   });
 
+  test('value equality compares every field and clip order', () {
+    final copy = EditProject.fromJson(project.toJson());
+    expect(copy, project);
+    expect(copy.hashCode, project.hashCode);
+    expect(project.copyWith(name: 'آخر'), isNot(project));
+    expect(project.moveClip(0, 1), isNot(project));
+    expect(project.copyWith(aspect: ExportAspect.square), isNot(project));
+  });
+
   test('totalDuration sums clip durations', () {
     expect(project.totalDuration, const Duration(seconds: 12));
   });

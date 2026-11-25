@@ -110,6 +110,25 @@ class EditProject {
     return index;
   }
 
+  /// Value equality: same id, name, aspect and clips in the same order.
+  @override
+  bool operator ==(Object other) {
+    if (other is! EditProject ||
+        other.id != id ||
+        other.name != name ||
+        other.aspect != aspect ||
+        other.clips.length != clips.length) {
+      return false;
+    }
+    for (var i = 0; i < clips.length; i++) {
+      if (other.clips[i] != clips[i]) return false;
+    }
+    return true;
+  }
+
+  @override
+  int get hashCode => Object.hash(id, name, aspect, Object.hashAll(clips));
+
   Map<String, Object?> toJson() => {
     'schemaVersion': schemaVersion,
     'id': id,

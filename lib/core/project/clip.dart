@@ -124,7 +124,8 @@ class Clip {
       Object.hash(id, sourcePath, sourceDuration, trimStart, trimEnd);
 
   @override
+  // sourcePath is left out on purpose: it reveals the user's file names and
+  // must not end up in logs or crash reports.
   String toString() =>
-      'Clip($id, $sourcePath, ${trimStart.inMilliseconds}ms..'
-      '${trimEnd.inMilliseconds}ms)';
+      'Clip($id, ${trimStart.inMilliseconds}ms..${trimEnd.inMilliseconds}ms)';
 }

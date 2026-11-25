@@ -1,7 +1,28 @@
-import 'package:material_ui/material_ui.dart';
+import 'dart:io';
 
-void main() {
-  runApp(const LaqtaApp());
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:material_ui/material_ui.dart';
+import 'package:path_provider/path_provider.dart';
+
+import 'core/storage/project_repository.dart';
+import 'features/editor/editor_controller.dart';
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  final documents = await getApplicationDocumentsDirectory();
+  final projectsDir = Directory(
+    '${documents.path}${Platform.pathSeparator}projects',
+  );
+  runApp(
+    ProviderScope(
+      overrides: [
+        projectRepositoryProvider.overrideWithValue(
+          ProjectRepository(projectsDir),
+        ),
+      ],
+      child: const LaqtaApp(),
+    ),
+  );
 }
 
 class LaqtaApp extends StatelessWidget {
