@@ -1,17 +1,12 @@
-# laqta
+# استوديو المونتاج
 
-Laqta - Arabic-first video and audio editor
+نص مكتوب ← صوت راوية عراقي (Leda) ← فحص سمعي آلي ← ترجمة وبطاقات ← فيديو 9:16 جاهز للنشر.
 
-## Getting Started
+```bash
+pip install faster-whisper librosa pytest ruff   # + ffmpeg مع libass و fonts-noto-core
+python -m studio voice  projects/alhirfa-ad
+python -m studio render projects/alhirfa-ad
+python -m pytest -q
+```
 
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+التفاصيل في `docs/architecture.md`، وخطوات صناعة إعلان في `.claude/skills/make-ad/SKILL.md`.

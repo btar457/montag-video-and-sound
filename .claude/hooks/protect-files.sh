@@ -18,7 +18,7 @@ fi
 [ -z "$file_path" ] && exit 0
 
 case "$(basename "$file_path")" in
-  AndroidManifest.xml | firestore.rules | storage.rules)
+  .env | .env.* | *.key | *.pem | firestore.rules | storage.rules)
     echo "ملف محمي، اعرض التعديل على مصطفى بدل تنفيذه ($file_path)" >&2
     exit 2
     ;;

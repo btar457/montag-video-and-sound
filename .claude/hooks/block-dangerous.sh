@@ -44,7 +44,7 @@ while IFS= read -r seg; do
   fi
 
   # Shell writes to protected files (the Edit/Write hook can't see these)
-  protected='(AndroidManifest\.xml|firestore\.rules|storage\.rules)'
+  protected='(\.env|\.key|\.pem|firestore\.rules|storage\.rules)'
   if printf '%s' "$seg" | grep -Eq ">[[:space:]]*[^[:space:]]*$protected" ||
     printf '%s' "$seg" | grep -Eq "(^|[[:space:]])(sed|perl)[[:space:]].*-i.*$protected" ||
     printf '%s' "$seg" | grep -Eq "(^|[[:space:]])(tee|mv|cp|rm|truncate|dd)[[:space:]].*$protected"; then
