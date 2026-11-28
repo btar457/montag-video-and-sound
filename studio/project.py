@@ -7,7 +7,7 @@ from pathlib import Path
 
 from . import config
 
-KINDS = ("clip", "blur", "end")
+KINDS = ("clip", "still", "blur", "end")
 
 
 @dataclass(frozen=True)
@@ -24,10 +24,16 @@ class Section:
 
 @dataclass(frozen=True)
 class Segment:
-    kind: str  # clip | blur | end
+    kind: str  # clip | still | blur | end
     src: str  # file in media/
     start: float
     end: float  # -1 means "until the end of the video"
+    # clip/blur: use only this part of the source (seconds); None = whole clip.
+    src_from: float | None = None
+    src_to: float | None = None
+    # still: the source time of the frame to hold (pick one with the mouth
+    # closed when the voiceover is not the person's own speech).
+    at: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -79,7 +85,16 @@ class Project:
             for s in data["sections"]
         ]
         segments = [
-            Segment(kind=g["kind"], src=g["src"], start=float(g["start"]), end=float(g["end"])) for g in data.get("segments", [])
+            Segment(
+                kind=g["kind"],
+                src=g["src"],
+                start=float(g["start"]),
+                end=float(g["end"]),
+                src_from=float(g["from"]) if "from" in g else None,
+                src_to=float(g["to"]) if "to" in g else None,
+                at=float(g.get("at", 0.0)),
+            )
+            for g in data.get("segments", [])
         ]
         cards = [Card(float(c["start"]), float(c["end"]), c["text"]) for c in data.get("cards", [])]
         end = data.get("end_card")
@@ -112,7 +127,17 @@ class Project:
                 raise ValueError(f"segments must be contiguous: gap/overlap at {g.start}")
             if g.end != -1 and g.end <= g.start:
                 raise ValueError(f"segment at {g.start} ends before it starts")
-            if "/" in g.src or "\\" in g.src or g.src.startswith("."):
+            if (g.src_from is None) != (g.src_to is None):
+                raise ValueError(f"segment at {g.start}: give both 'from' and 'to', or neither")
+            if g.src_from is not None and not 0 <= g.src_from < g.src_to:
+                raise ValueError(f"segment at {g.start}: need 0 <= from < to")
+            if g.kind != "still" and g.at:
+                raise ValueError(f"segment at {g.start}: 'at' only applies to still segments")
+            if g.kind not in ("clip", "blur") and g.src_from is not None:
+                raise ValueError(f"segment at {g.start}: 'from'/'to' only apply to clip and blur segments")
+            if g.at < 0:
+                raise ValueError(f"segment at {g.start}: 'at' must not be negative")
+            if not g.src or "/" in g.src or "\\" in g.src or g.src.startswith("."):
                 raise ValueError(f"segment src must be a plain file name in media/: {g.src!r}")
             prev_end = g.end
         if self.segments and self.segments[-1].end != -1 and self.end_card:
